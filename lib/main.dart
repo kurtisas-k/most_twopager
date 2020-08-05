@@ -52,18 +52,53 @@ class CounterStorage {
     }
   }
 
+  Future<int> countSuccess() async {
+    int countSuccess = 0;
+    try{
+      final file = await _localFile;
+      var lines = await file.readAsLines();
+      for(int i = 0; i<lines.length; i++){
+        if(lines[i].contains("success")){
+          countSuccess++;
+        }
+      }
+      print("$countSuccess countSuccess");
+      return countSuccess;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
   Future<File> writeCounter(int counter) async {
     final file = await _localFile;
     // Write the file
-    return file.writeAsString('$counter');
+    return file.writeAsString('$counter', mode:FileMode.append);
   }
   
   Future<File> writeText(String text) async {
     final file = await _localFile;
+    print("input text $text");
+    if(text == "deleteme"){
+      return file.writeAsString('', flush: true);
+    }
+    else
+      {
+        return file.writeAsString('$text', mode:FileMode.append);
+      }
     // Write the file
-    print("some $text");
-    return file.writeAsString('$text');
+
   }
+
+
+
+  Future<void> appendSuccessStatus() async {
+    final file = await _localFile;
+    // Write the file
+    return file.writeAsStringSync('success', mode: FileMode.append);
+  }
+
+
 }
 
 class FlutterDemo extends StatefulWidget {
@@ -120,30 +155,34 @@ class _FlutterDemoState extends State<FlutterDemo> {
     return Scaffold(
       appBar: AppBar(title: Text('Reading and Writing Files')),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          Text(
-            '_goalStats',
-          ),
-          Expanded(
-            child: TextField(
-              textInputAction: TextInputAction.done,
-              maxLines: null,
-              controller: _controller,
-              onSubmitted: (String value) async {
-
-                // todo: move action from onSubmitted to set button onPressed
-                // todo: move from txt to json
-                // todo: model Goal class - status: complete, incomplete
-                // todo: show dialog on set button being pressed
-                // todo: update stats upon success button being pressed
-                // todo: add count up timer -
-              },
+          goalStats(),
+          TextField(
+            decoration: new InputDecoration(
+              border: new OutlineInputBorder(
+//                borderSide: new BorderSide(color: Colors.teal),
+              ),
             ),
+            textInputAction: TextInputAction.done,
+            maxLines: null,
+            controller: _controller,
+            onSubmitted: (String value) async {
+
+              // todo: move from txt to json
+              // todo: model Goal class - status: complete, incomplete
+              // todo: update stats upon success button being pressed
+              // todo: count time since goal set on success page
+              // todo: determine how to do a module
+            },
           ),
         ]
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          setState(() {
+
+          });
           _incrementCounter();
           _saveGoal();
           Navigator.push(
@@ -154,6 +193,24 @@ class _FlutterDemoState extends State<FlutterDemo> {
         label: Text('Set'),
         tooltip: 'Set',
         icon: Icon(Icons.adjust)),
+    );
+
+  }
+}
+
+
+
+class goalStats extends StatelessWidget {
+  const goalStats({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    Future<int> SuccessCount = new CounterStorage().countSuccess();
+    String successCount = SuccessCount.toString();
+    return Text(
+      "$successCount successes completed!",
     );
   }
 }
@@ -170,7 +227,10 @@ class SuccessRoute extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
+//            var successCounter = new CounterStorage().countSuccess();
+
             Navigator.pop(context);
+            new CounterStorage().writeText("success\n");
           },
           label: Text('Success'),
           tooltip: 'Success',
@@ -178,3 +238,7 @@ class SuccessRoute extends StatelessWidget {
     );
   }
 }
+
+
+
+
